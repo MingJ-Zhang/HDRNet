@@ -1,0 +1,10 @@
+# Tested target stack:
+# Python >= 3.8
+# PyTorch >= 1.10, CUDA matched to your server
+# mmengine >= 0.7
+# mmcv >= 2.0
+# mmsegmentation >= 1.0
+openmim
+mmengine
+mmcv>=2.0.0
+mmsegmentation>=1.0.0
