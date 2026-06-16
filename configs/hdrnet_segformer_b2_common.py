@@ -49,9 +49,10 @@ model = dict(
         num_object_classes=7,
         num_damage_classes=2,
         damage_ordinal=False,
+        coarse_class_mapping=None,
         object_class_mapping=None,
         damage_class_mapping=None,
-        coarse_class_mapping=None,
+        class_cooccurrence_matrix=None,
         damage_semantic_ids=[],
         loss_weights=dict(seg=1.0, coarse=0.1, obj=0.4, damage=0.6, hier=0.3, boundary=0.4),
         loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
@@ -113,10 +114,6 @@ param_scheduler = [
     dict(type='PolyLR', eta_min=0.0, power=1.0, begin=1500, end=80000, by_epoch=False)]
 
 default_scope = 'mmseg'
-
-model_wrapper_cfg = dict(
-    type='MMDistributedDataParallel',
-    find_unused_parameters=True)
 
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),

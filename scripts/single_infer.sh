@@ -8,4 +8,4 @@ OUT_DIR=${4:-outputs}
 
 export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 mkdir -p "${OUT_DIR}"
-python tools/image_demo.py "${IMG}" "${CONFIG}" --checkpoint "${CHECKPOINT}" --out-file "${OUT_DIR}/$(basename ${IMG})"
+python demo/image_demo.py "${IMG}" "${CONFIG}" --checkpoint "${CHECKPOINT}" --out-file "${OUT_DIR}/$(basename ${IMG})"
