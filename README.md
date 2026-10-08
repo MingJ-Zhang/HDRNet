@@ -64,51 +64,62 @@ Efficiency at 512×512, batch 1, FP32:
 
 ```text
 hdrnet/
-  mit.py        MiT-B2 encoder
-  drca.py       relation context
-  dsbr.py       structural boundary
-  hdad.py       hierarchical heads
-  losses.py     segmentation, factor, consistency, boundary
-  model.py      HDRNet
-baselines/      one module per comparison model
-configs/        class lists, C_d, and the 80k protocol
+  mit.py drca.py dsbr.py hdad.py model.py losses.py
+  data/             FloodNet, RescueNet, FWISD and the train pipeline
+  engine/           poly schedule, CE+Dice / OHEM, slide inference, mIoU
+  builder.py        model and loss factory
+baselines/          one trainable module per comparison row
+configs/            class lists, C_d, factor maps, 80k protocol
+tools/train.py
+tools/test.py
+docs/baselines.md   paper, official repository, and the config that was trained
 ```
 
-`baselines/` contains PSPNet, DeepLabV3+, FastFCN, K-Net, Mask2Former, OCRNet, PIDNet-S, SegFormer, SegMAN-T, OverLoCK, Spatial-Mamba, RS3Mamba, HL-SAM-Seg, and DA-SegFormer. Each file names the source paper. DA-SegFormer is the SegFormer graph; its difference is class-aware sampling and an OHEM + Dice loss.
+## Where the baselines come from
 
-## Use
+The numbers in the paper were trained in MMSegmentation, not by pasting a few custom layers into an unrelated framework. Each file under `baselines/` names three things: the paper, the official repository, and the config that produced the table row. The full list is in [`docs/baselines.md`](docs/baselines.md).
+
+DA-SegFormer is the SegFormer-B2 graph. Its config only changes the crop and the loss: class-aware sampling (`rare_prob=0.5`) and OHEM + Dice. `tools/train.py --model da-segformer` applies both.
+
+SegMAN, OverLoCK, Spatial-Mamba, RS3Mamba and HL-SAM-Seg depend on official CUDA kernels or a SAM checkpoint. Those files keep the architecture that was compared and point at the upstream repository. They are not drop-in copies of those kernels.
+
+## Data
+
+Put each dataset in its own directory. Masks are single-channel class indices. Background is class 0, not an ignore label. Ignore index is 255.
+
+```text
+FloodNet/
+  train_only_crop1024/images/*.jpg
+  train_only_crop1024/labels/*.png
+  test/test-org-img/*.jpg
+  test/test-label-img/*_lab.png
+RescueNet/
+  train_only_crop1024/images/*.jpg
+  train_only_crop1024/labels/*.png
+  test/test-org-img/*.jpg
+  test/test-label-img/*_lab.png
+FWISD/
+  img_dir/{train,val}/*.png
+  ann_dir/{train,val}/*.png
+```
+
+Training resizes around a 1024 base with a scale in `[0.5, 2.0]`, crops 512, rejects a crop when one class covers 75% or more, then flips and applies photometric distortion. Normalization is ImageNet mean and standard deviation.
+
+## Train and test
 
 ```bash
-pip install torch
+pip install -r requirements.txt
+
+python tools/train.py --model hdrnet --dataset floodnet --data-root D:/data/FloodNet
+python tools/train.py --model segformer --dataset rescuenet --data-root D:/data/RescueNet
+python tools/train.py --model da-segformer --dataset fwisd --data-root D:/data/FWISD
+
+python tools/test.py --model hdrnet --dataset floodnet --data-root D:/data/FloodNet ^
+    --checkpoint work_dirs/hdrnet_floodnet/iter_80000.pth
 ```
 
-```python
-import torch
-from hdrnet import HDRNet
+The schedule is AdamW at `6e-5`, weight decay `0.01`, 750-step warmup, then polynomial decay to 80k. Checkpoints are written every 4000 iterations. Testing is a sliding window of 512 with stride 384. HDRNet loss weights are coarse `0.1`, object `0.4`, state `0.6`, hierarchy `0.3`, boundary `0.4`. Other models use cross-entropy plus Dice with weight 3, except DA-SegFormer, which uses OHEM plus Dice.
 
-net = HDRNet(num_classes=10, num_objects=8, num_states=2)
-out = net(torch.randn(1, 3, 512, 512))
-logits = out["semantic"]   # composite label
-```
-
-Dataset keys in `configs.datasets` are `floodnet`, `rescuenet`, and `fwisd`. Each entry stores the class names and the boundary set `C_d`. The shared schedule is in `configs.protocol`: AdamW at `6e-5`, weight decay `0.01`, polynomial decay, 80k iterations, crop 512, scale range 0.5–2.0.
-
-```python
-from configs.datasets import DATASETS
-from hdrnet import HDRNet
-
-spec = DATASETS["rescuenet"]
-net = HDRNet(
-    num_classes=len(spec["classes"]),
-    num_objects=spec["num_objects"],
-    ordered=spec["ordered_damage"],
-)
-```
-
-Loss weights follow the paper: coarse `0.1`, object `0.4`, state `0.6`, hierarchy `0.3`, boundary `0.4`.
-
-## Scope
-
-The modules are a readable realization of the paper. They are not a training framework, and they do not ship pretrained weights. Reported metrics should be cited from the manuscript, not from a rerun of this tree.
+The table at the top of this file comes from the paper experiments. A fresh run of this tree is a reimplementation of that protocol, not a bitwise reproduction of the MMSegmentation checkpoints.
 
 Code is released under Apache-2.0. See `LICENSE`.

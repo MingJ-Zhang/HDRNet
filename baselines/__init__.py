@@ -1,7 +1,7 @@
 """Comparison models used in the paper tables.
 
-Each module is a short reference implementation of the cited architecture.
-HDRNet itself lives in :mod:`hdrnet`.
+Each module names its paper, official repository, and the training config.
+See ``docs/baselines.md``. HDRNet itself lives in :mod:`hdrnet`.
 """
 
 from baselines.da_segformer import DASegFormer

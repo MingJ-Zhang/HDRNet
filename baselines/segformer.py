@@ -1,7 +1,21 @@
-"""SegFormer reference.
+"""SegFormer-B2.
 
-Xie et al., SegFormer: Simple and Efficient Design for Semantic Segmentation, NeurIPS 2021.
-This file uses the same MiT-B2 encoder as HDRNet and an MLP decoder only.
+Paper
+    Xie et al., SegFormer: Simple and Efficient Design for Semantic Image
+    Segmentation with Transformers, NeurIPS 2021.
+    https://arxiv.org/abs/2105.15203
+
+Official code
+    https://github.com/NVlabs/SegFormer
+    MMSegmentation: ``mmseg/models/backbones/mit.py`` and
+    ``mmseg/models/decode_heads/segformer_head.py``.
+
+Setting used for the tables
+    ``configs/floodnet/segformer_mit-b2_2xb8-80k_floodnet-crop1024.py``.
+    MiT-B2, ImageNet init ``mit_b2_20220624-66e8bf70.pth``, MLP decoder at
+    256 channels, cross-entropy plus Dice (weight 3), 512 crop, 80k iterations,
+    AdamW 6e-5. HDRNet uses this same encoder. The decoder here is only the
+    SegFormer MLP head.
 """
 
 from __future__ import annotations

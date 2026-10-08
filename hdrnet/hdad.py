@@ -28,7 +28,7 @@ class HDAD(nn.Module):
         self.object_cls = nn.Conv2d(channels, num_objects, 1)
         if ordered and num_states > 1:
             self.state_score = nn.Conv2d(channels, 1, 1)
-            self.thresholds = nn.Parameter(torch.linspace(-1.0, 1.0, num_states - 1))
+            self.level_bias = nn.Parameter(torch.linspace(-1.5, 1.5, num_states))
         else:
             self.state_cls = nn.Conv2d(channels, num_states, 1)
         self.fuse = nn.Sequential(
@@ -41,14 +41,8 @@ class HDAD(nn.Module):
     def state_logits(self, feat: torch.Tensor) -> torch.Tensor:
         if not self.ordered:
             return self.state_cls(feat)
-        score = self.state_score(feat)
-        ordered = torch.sort(self.thresholds)[0]
-        cumulative = torch.sigmoid(score - ordered.view(1, -1, 1, 1))
-        levels = [1.0 - cumulative[:, :1]]
-        for index in range(cumulative.shape[1] - 1):
-            levels.append(cumulative[:, index : index + 1] - cumulative[:, index + 1 : index + 2])
-        levels.append(cumulative[:, -1:])
-        return torch.cat(levels, dim=1).clamp_min(1e-6).log()
+        # Shared damage score plus class biases initialized from light to severe.
+        return self.state_score(feat) + self.level_bias.view(1, -1, 1, 1)
 
     def forward(self, feat: torch.Tensor) -> dict[str, torch.Tensor]:
         obj_feat = self.object_feat(feat)

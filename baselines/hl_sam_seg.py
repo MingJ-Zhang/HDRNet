@@ -1,8 +1,21 @@
-"""HL-SAM-Seg reference.
+"""HL-SAM-Seg.
 
-A hierarchical prompt-free segmentation head in the style of SAM adapters used
-for remote-sensing damage mapping. The image encoder here is a lightweight
-stand-in for the frozen SAM backbone used in the comparison.
+Paper
+    Hierarchical SAM adaptation for prompt-free semantic segmentation. The
+    comparison row freezes a SAM image encoder and trains a hierarchical mask
+    decoder on the disaster labels.
+
+Official code
+    Segment Anything: https://github.com/facebookresearch/segment-anything
+
+Setting used for the tables
+    The released comparison uses the SAM ViT image encoder plus a lightweight
+    hierarchical head, not a CNN trained from scratch. This file keeps the
+    head that the table actually depends on: one learned prompt per class,
+    an adapter on the encoder feature, and a class-conditioned mask. The
+    encoder is a convolutional stand-in so the repository does not download
+    the SAM checkpoint. Swap ``self.encoder`` for a frozen SAM ViT if you have
+    that weight locally.
 """
 
 from __future__ import annotations

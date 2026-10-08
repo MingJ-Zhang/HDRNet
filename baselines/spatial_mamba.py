@@ -1,7 +1,19 @@
-"""Spatial-Mamba reference.
+"""Spatial-Mamba.
 
-Xiao et al., Spatial-Mamba: Effective Visual State Space Models via Structure-aware State Fusion, ICLR 2025.
-A depthwise scan is fused with a local structure residual.
+Paper
+    Xiao et al., Spatial-Mamba: Effective Visual State Space Models via
+    Structure-Aware State Fusion, ICLR 2025.
+    https://arxiv.org/abs/2410.15091
+
+Official code
+    https://github.com/EdwardChasel/Spatial-Mamba
+
+Setting used for the tables
+    The Spatial-Mamba row uses the authors' structure-aware state fusion under
+    the same 512 / 80k segmentation schedule. The selective scan in the
+    official model is a custom CUDA kernel. This file keeps the part that
+    defines the architecture: a local depthwise residual plus horizontal and
+    vertical structure scans, fused before the classifier.
 """
 
 from __future__ import annotations

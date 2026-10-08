@@ -1,31 +1,33 @@
-"""DA-SegFormer reference.
+"""DA-SegFormer on the SegFormer-B2 graph.
 
-Zhang et al. The comparison in this paper uses the same MiT-B2 graph as SegFormer.
-The difference is the training recipe: class-aware sampling and OHEM + Dice.
+Paper
+    The class-aware crop and the OHEM + Dice objective follow the DA-SegFormer
+    training recipe. The network weights are the SegFormer MiT-B2 decoder.
+
+Official code
+    SegFormer: https://github.com/NVlabs/SegFormer
+
+Setting used for the tables
+    ``configs/floodnet/da-segformer_mit-b2_2xb8-80k_floodnet-crop1024.py``
+    and the matching RescueNet / FWISD configs. The graph is MiT-B2. Training
+    differs from the SegFormer row in two places only:
+
+    * ``ClassAwareCrop`` with ``rare_prob=0.5``. Rare ids are FloodNet
+      ``[1, 3]``, RescueNet ``[3, 4, 5]``, FWISD ``[4, 6, 8]``.
+    * Loss is OHEM (``min_kept=209715``) plus Dice, equal weights.
+
+``tools/train.py --model da-segformer`` turns both of those on.
 """
 
 from __future__ import annotations
-
-import torch
-import torch.nn.functional as F
 
 from baselines.segformer import SegFormer
 
 
 class DASegFormer(SegFormer):
-    """MiT-B2 SegFormer. Class-aware crop and OHEM+Dice belong to the trainer."""
+    """Same MiT-B2 module as SegFormer.
 
-    def loss(self, logits: torch.Tensor, label: torch.Tensor, ignore_index: int = 255) -> torch.Tensor:
-        ce = F.cross_entropy(logits, label, ignore_index=ignore_index, reduction="none")
-        valid = label != ignore_index
-        hard = ce[valid]
-        if hard.numel() == 0:
-            return ce.sum() * 0.0
-        keep = hard > hard.median()
-        ohem = hard[keep].mean() if keep.any() else hard.mean()
-        prob = logits.softmax(dim=1)
-        one_hot = F.one_hot(label.clamp(min=0), prob.shape[1]).permute(0, 3, 1, 2).float()
-        one_hot = one_hot * valid.unsqueeze(1)
-        dims = (0, 2, 3)
-        dice = 1.0 - ((2 * (prob * one_hot).sum(dims) + 1.0) / (prob.sum(dims) + one_hot.sum(dims) + 1.0)).mean()
-        return ohem + dice
+    ``tools/train.py`` switches on the class-aware crop and the OHEM + Dice
+    loss when this name is selected. Those two changes are the whole difference
+    from the SegFormer row.
+    """

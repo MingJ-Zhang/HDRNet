@@ -1,7 +1,19 @@
-"""OverLoCK reference.
+"""OverLoCK-T.
 
-Lou et al., OverLoCK: An Overview-first-Look-Closely-next ConvNet, CVPR 2025.
-A coarse overview map gates a later, higher-resolution convolution.
+Paper
+    Lou et al., OverLoCK: An Overview-first-Look-Closely-next ConvNet with
+    Context-Mixing Dynamic Kernels, CVPR 2025.
+    https://arxiv.org/abs/2502.20087
+
+Official code
+    https://github.com/LMMMEng/OverLoCK
+    The comparison config is
+    ``configs/floodnet/upernet_overlock-t_2xb8-80k_floodnet-crop1024.py``
+    (UPerNet head on OverLoCK-T).
+
+This file follows the paper's two-step path: a downsampled overview produces
+a spatial gate, and the higher-resolution features are convolved under that
+gate. It does not include the official dynamic-kernel CUDA kernels.
 """
 
 from __future__ import annotations

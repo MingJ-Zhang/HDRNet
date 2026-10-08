@@ -1,7 +1,19 @@
-"""RS3Mamba reference.
+"""RS3Mamba.
 
-Ma et al., RS3Mamba: Visual State Space Model for Remote Sensing Image Semantic Segmentation, 2024.
-A convolutional branch and a state-space branch are fused before the decoder.
+Paper
+    Ma, Zhang, Pun, RS3Mamba: Visual State Space Model for Remote Sensing
+    Image Semantic Segmentation, IEEE GRSL 2024.
+    https://arxiv.org/abs/2404.02457
+
+Official code
+    https://github.com/sstary/SSRS
+
+Setting used for the tables
+    Dual encoder: a convolutional branch and a Mamba branch, fused before the
+    segmentation head, trained with the common 512 / 80k schedule. The Mamba
+    branch here is a directional depthwise scan with the same interface as the
+    paper's auxiliary state-space encoder. The official selective-scan kernel
+    is not vendored.
 """
 
 from __future__ import annotations

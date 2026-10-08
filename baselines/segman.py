@@ -1,7 +1,19 @@
-"""SegMAN-T reference.
+"""SegMAN-T.
 
-Fu et al., SegMAN: Omni-scale Context Modeling with State Space Models and Local Attention, 2024.
-A local convolution and a global state-space mixer run side by side.
+Paper
+    Fu et al., SegMAN: Omni-scale Context Modeling with State Space Models
+    and Local Attention for Semantic Segmentation, CVPR 2025.
+    https://arxiv.org/abs/2412.11890
+
+Official code
+    https://github.com/yunxiangfu2001/SegMAN
+
+Setting used for the tables
+    SegMAN-Tiny, trained with the same 512 crop / 80k / AdamW schedule as
+    SegFormer. The official model is an omni-scale state-space encoder. This
+    file keeps that split: a local convolution branch beside a directional
+    state mix, then a joint head. It is not a weight-compatible copy of the
+    official SegMAN-T checkpoint.
 """
 
 from __future__ import annotations

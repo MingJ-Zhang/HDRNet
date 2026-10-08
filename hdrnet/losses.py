@@ -51,13 +51,16 @@ class HDRNetLoss(nn.Module):
         semantic = outputs["semantic"]
         if semantic.shape[-2:] != label.shape[-2:]:
             semantic = F.interpolate(semantic, size=label.shape[-2:], mode="bilinear", align_corners=False)
+        semantic = self._resize(semantic, label)
+        obj_logits = self._resize(outputs["object"], label)
+        state_logits = self._resize(outputs["state"], label)
         seg = self.ce(semantic, label) + _dice(semantic, label, self.num_classes, self.ignore_index)
         coarse = F.binary_cross_entropy(outputs["coarse"], self._image_composition(label))
         obj_target = self._project(label, self.obj_matrix)
         state_target = self._project(label, self.state_matrix)
-        obj = self.ce(outputs["object"], obj_target)
-        state = self.ce(outputs["state"], state_target)
-        hier = hierarchical_kl(semantic, outputs["object"], self.obj_matrix)
+        obj = self.ce(obj_logits, obj_target)
+        state = self.ce(state_logits, state_target)
+        hier = hierarchical_kl(semantic, obj_logits, self.obj_matrix)
         boundary_logit = outputs["boundary"].squeeze(1)
         boundary_target = morphological_boundary(label, self.boundary_classes, self.ignore_index)
         if boundary_logit.shape[-2:] != boundary_target.shape[-2:]:
@@ -84,8 +87,13 @@ class HDRNetLoss(nn.Module):
         counts = (one_hot * valid.unsqueeze(-1)).sum(dim=(1, 2))
         return counts / counts.sum(dim=-1, keepdim=True).clamp_min(1.0)
 
+    def _resize(self, logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+        if logits.shape[-2:] != label.shape[-2:]:
+            logits = F.interpolate(logits, size=label.shape[-2:], mode="bilinear", align_corners=False)
+        return logits
+
     def _project(self, label: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
-        valid = label != self.ignore_index
-        safe = label.clamp(0, matrix.shape[1] - 1)
-        mapped = matrix[:, safe].argmax(dim=0)
-        return mapped.masked_fill(~valid, self.ignore_index)
+        index = matrix.argmax(dim=0)
+        index = index.masked_fill(matrix.sum(dim=0) <= 0, self.ignore_index)
+        mapped = index[label.clamp(0, index.numel() - 1)]
+        return mapped.masked_fill(label == self.ignore_index, self.ignore_index)
