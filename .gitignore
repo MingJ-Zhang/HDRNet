@@ -8,7 +8,7 @@ build/
 dist/
 work_dirs/
 outputs/
-data/
+/data/
 *.pth
 *.pt
 *.onnx
