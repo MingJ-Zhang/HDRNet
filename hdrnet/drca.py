@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class DepthwiseBranch(nn.Module):
@@ -55,6 +54,10 @@ class DRCA(nn.Module):
     def set_prior(self, relation: torch.Tensor) -> None:
         """Install R_ij = N(c_i, c_j) / N(c_i), with a zero diagonal."""
         prior = relation.detach().float().clone()
+        if prior.shape != self.prior.shape or not torch.isfinite(prior).all():
+            raise ValueError("prior must be a finite C-by-C matrix")
+        if (prior < 0).any() or (prior > 1).any():
+            raise ValueError("co-occurrence probabilities must lie in [0, 1]")
         prior.fill_diagonal_(0)
         self.prior.copy_(prior)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import torch.nn as nn
+import warnings
 
 from baselines import (
     DASegFormer,
@@ -20,7 +21,7 @@ from baselines import (
     SegMANT,
     SpatialMamba,
 )
-from configs.datasets import DATASETS, factor_matrix
+from configs.datasets import DATASETS, factor_matrix, state_groups
 from configs.protocol import PROTOCOL
 from hdrnet.engine.losses import OhemDiceLoss, SegLoss
 from hdrnet.losses import HDRNetLoss
@@ -44,8 +45,14 @@ MODELS = {
     "da-segformer": DASegFormer,
 }
 
+PROTOTYPE_MODELS = {"segman", "overlock", "spatial-mamba", "rs3mamba", "hl-sam-seg"}
+
 
 def build_model(name: str, dataset: str) -> nn.Module:
+    if name in PROTOTYPE_MODELS:
+        warnings.warn(f"{name} is a lightweight interface prototype, not the official architecture; "
+                      "do not use it to reproduce the paper comparison row. See docs/baselines.md.",
+                      UserWarning, stacklevel=2)
     spec = DATASETS[dataset]
     num_classes = len(spec["classes"])
     if name == "hdrnet":
@@ -54,6 +61,7 @@ def build_model(name: str, dataset: str) -> nn.Module:
             num_objects=spec["num_objects"],
             num_states=spec["num_states"],
             ordered=spec["ordered_damage"],
+            state_groups=state_groups(dataset),
         )
     if name not in MODELS:
         known = ", ".join(sorted(MODELS))
@@ -70,6 +78,7 @@ def build_criterion(name: str, dataset: str) -> nn.Module:
             obj_matrix=factor_matrix(spec["object_index"], spec["num_objects"]),
             state_matrix=factor_matrix(spec["state_index"], spec["num_states"]),
             weights=PROTOCOL["loss_weights"],
+            state_groups=state_groups(dataset),
         )
     if name == "da-segformer":
         return OhemDiceLoss()

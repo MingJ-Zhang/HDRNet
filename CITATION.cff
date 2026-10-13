@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this reference implementation, cite the HDRNet manuscript and identify the code version."
+type: software
+title: "HDRNet: Hierarchical Damage-Aware Relation Refinement Network for Post-Disaster UAV Image Segmentation"
+version: 0.2.0
+date-released: 2026-10-13
+authors:
+  - family-names: Zhang
+    given-names: Mingjie
+  - family-names: Zhang
+    given-names: Xiangyin
+  - family-names: Chen
+    given-names: Kai
+  - family-names: Zhou
+    given-names: Yongxu
+repository-code: "https://github.com/MingJ-Zhang/HDRNet"
+license: Apache-2.0

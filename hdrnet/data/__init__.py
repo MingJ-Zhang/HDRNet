@@ -16,6 +16,7 @@ def make_dataset(name: str, root: str, train: bool, class_aware: bool = False, c
         crop_size=crop_size,
         class_aware=class_aware and train,
         rare_classes=spec["rare_classes"],
+        num_classes=len(spec["classes"]),
     )
 
 
@@ -35,5 +36,5 @@ def make_loader(
         shuffle=train,
         num_workers=workers,
         drop_last=train,
-        pin_memory=True,
+        pin_memory=False,
     )

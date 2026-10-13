@@ -93,7 +93,7 @@ DATASETS = {
         # bg, water, building, vehicle, road, tree, pool
         object_index=(0, 1, 2, 2, 2, 2, 3, 4, 4, 5, 6),
         # building damage is ordered: none, minor, major, total
-        state_index=(-1, -1, 0, 1, 2, 3, -1, -1, -1, -1, -1),
+        state_index=(-1, -1, 0, 1, 2, 3, -1, 0, 1, -1, -1),
         splits=dict(
             train=dict(
                 img="train_only_crop1024/images",
@@ -143,9 +143,9 @@ DATASETS = {
         num_objects=8,
         num_states=2,
         ordered_damage=False,
-        # bg, natural water, tree, road, building, waterfront, vehicle, floodwater
-        object_index=(0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7),
-        state_index=(-1, -1, -1, 0, 1, 0, 1, 0, 1, 0, 1, -1),
+        # bg, water, tree, road, building, waterfront, land vehicle, water vehicle
+        object_index=(0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 7, 1),
+        state_index=(-1, 0, -1, 0, 1, 0, 1, 0, 1, -1, -1, 1),
         splits=dict(
             train=dict(img="img_dir/train", ann="ann_dir/train", img_suffix=".png", ann_suffix=".png"),
             test=dict(img="img_dir/val", ann="ann_dir/val", img_suffix=".png", ann_suffix=".png"),
@@ -161,3 +161,19 @@ def factor_matrix(index: tuple[int, ...], n_rows: int) -> torch.Tensor:
         if row >= 0:
             matrix[row, column] = 1.0
     return matrix
+
+
+def state_groups(dataset: str) -> dict[str, dict]:
+    """Per-object state maps; unrelated objects have independent heads."""
+    spec = DATASETS[dataset]
+    groups = {}
+    for obj in sorted(set(spec["object_index"])):
+        indices = tuple(state if object_id == obj else -1
+                        for object_id, state in zip(spec["object_index"], spec["state_index"]))
+        states = sorted({s for s in indices if s >= 0})
+        if states:
+            if states != list(range(len(states))):
+                raise ValueError(f"non-contiguous state ids for object {obj}")
+            groups[str(obj)] = {"index": indices, "num_states": len(states),
+                                "ordered": dataset == "rescuenet" and obj == 2}
+    return groups

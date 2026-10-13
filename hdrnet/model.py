@@ -40,6 +40,7 @@ class HDRNet(nn.Module):
         num_states: int = 2,
         ordered: bool = False,
         embed_dim: int = 256,
+        state_groups: dict | None = None,
     ) -> None:
         super().__init__()
         self.encoder = MixVisionTransformer()
@@ -47,7 +48,7 @@ class HDRNet(nn.Module):
         self.drca = DRCA(channels[-1], num_classes=num_classes)
         self.decoder = MLPDecoder(channels, embed_dim)
         self.dsbr = DSBR(channels[0], channels[1], embed_dim)
-        self.hdad = HDAD(embed_dim, num_classes, num_objects, num_states, ordered)
+        self.hdad = HDAD(embed_dim, num_classes, num_objects, num_states, ordered, state_groups)
 
     def forward(self, image: torch.Tensor) -> dict[str, torch.Tensor]:
         features = self.encoder(image)

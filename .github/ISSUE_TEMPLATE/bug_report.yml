@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible problem with HDRNet.
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit, Python/PyTorch versions, OS and device; attach run.json where available.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Exact command, expected behavior and observed behavior. Use synthetic data where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Logs or traceback
+      render: shell

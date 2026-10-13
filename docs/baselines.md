@@ -1,5 +1,20 @@
 # Comparison models
 
+## Integration status
+
+All bundled comparison modules are local reference adapters. They are not the
+original training archives and do not establish the published comparison scores.
+In particular, SegMAN, OverLoCK, Spatial-Mamba, RS3Mamba and HL-SAM-Seg are
+**interface prototypes** with simplified blocks: they do not implement the
+official selective-scan kernels or SAM encoder. The factory emits a warning when
+building them. Use their official repositories for scientific baseline reproduction.
+The remaining adapters are executable PyTorch references and also need a validated
+configuration/checkpoint match before reproducing a paper row.
+
+The table below preserves the previous release's experiment-source notes. The
+named MMSegmentation configuration files and original trained checkpoints are
+not shipped in this tree. See [release provenance](reproducibility.md).
+
 The mIoU numbers in the paper were produced by training each model in MMSegmentation for 80k iterations (512 crop, AdamW 6e-5, polynomial decay, batch 8 on each of 2 GPUs). This repository reimplements those settings in plain PyTorch so training and testing do not depend on MMSegmentation. Where a model needs a custom CUDA kernel, the file says so and links to the official code.
 
 | Model | Backbone in the table | Paper | Official code | Config trained for the table |

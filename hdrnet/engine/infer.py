@@ -30,6 +30,10 @@ def slide_inference(
     stride: int = 384,
 ) -> torch.Tensor:
     """Average logits over 512 windows. ``image`` is ``1 x 3 x H x W``."""
+    if image.ndim != 4 or image.shape[0] != 1 or min(image.shape[-2:]) < 1:
+        raise ValueError("sliding-window inference expects one NCHW image")
+    if crop_size < 32 or stride < 1 or stride > crop_size:
+        raise ValueError("require crop_size >= 32 and 1 <= stride <= crop_size")
     model.eval()
     _, _, height, width = image.shape
     if height <= crop_size and width <= crop_size:
@@ -43,9 +47,9 @@ def slide_inference(
     counts = torch.zeros(1, 1, height, width, device=device)
     ys = list(range(0, max(height - crop_size, 0) + 1, stride))
     xs = list(range(0, max(width - crop_size, 0) + 1, stride))
-    if not ys or ys[-1] != height - crop_size:
+    if not ys or ys[-1] != max(height - crop_size, 0):
         ys.append(max(height - crop_size, 0))
-    if not xs or xs[-1] != width - crop_size:
+    if not xs or xs[-1] != max(width - crop_size, 0):
         xs.append(max(width - crop_size, 0))
     for top in ys:
         for left in xs:

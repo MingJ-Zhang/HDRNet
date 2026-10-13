@@ -37,6 +37,8 @@ class SegLoss(nn.Module):
         logits = logits_of(output)
         if logits.shape[-2:] != label.shape[-2:]:
             logits = F.interpolate(logits, size=label.shape[-2:], mode="bilinear", align_corners=False)
+        if not (label != self.ignore_index).any():
+            return logits.sum() * 0
         return self.ce(logits, label) + self.dice_weight * _dice(logits, label, self.ignore_index)
 
 

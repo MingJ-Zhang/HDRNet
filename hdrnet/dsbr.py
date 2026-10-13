@@ -56,8 +56,8 @@ class DSBR(nn.Module):
         structural = self.fuse(low)
         responses = [conv(structural) for conv in self.directions]
         stacked = torch.cat(responses, dim=1)
-        boundary = self.boundary(stacked).sigmoid()
-        gate = self.gate(torch.cat([decoded, structural, boundary], dim=1)).sigmoid()
+        boundary = self.boundary(stacked)
+        gate = self.gate(torch.cat([decoded, structural, boundary.sigmoid()], dim=1)).sigmoid()
         refined = self.out(decoded + decoded * gate)
         return refined, boundary
 
@@ -71,4 +71,4 @@ def morphological_boundary(label: torch.Tensor, class_ids: tuple[int, ...], igno
         dilated = F.max_pool2d(mask, kernel_size=3, stride=1, padding=1)
         eroded = -F.max_pool2d(-mask, kernel_size=3, stride=1, padding=1)
         target = torch.maximum(target, (dilated - eroded).squeeze(1))
-    return (target > 0).float()
+    return ((target > 0) & valid).float()

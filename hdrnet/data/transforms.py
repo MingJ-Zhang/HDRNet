@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 import torch.nn.functional as F
+from PIL import Image, ImageEnhance
 
 
 class Normalize:
@@ -22,7 +23,7 @@ def _resize(image: np.ndarray, mask: np.ndarray, height: int, width: int) -> tup
     lab = torch.from_numpy(mask.astype(np.float32)).view(1, 1, *mask.shape)
     img = F.interpolate(img, size=(height, width), mode="bilinear", align_corners=False)
     lab = F.interpolate(lab, size=(height, width), mode="nearest")
-    return img.squeeze(0).permute(1, 2, 0).byte().numpy(), lab.squeeze().long().numpy()
+    return img.squeeze(0).permute(1, 2, 0).byte().numpy(), lab[0, 0].long().numpy()
 
 
 class TrainTransform:
@@ -35,6 +36,10 @@ class TrainTransform:
         cat_max_ratio: float = 0.75,
         scale: int = 1024,
         ratio_range: tuple[float, float] = (0.5, 2.0),
+        horizontal_prob: float = 0.5,
+        vertical_prob: float = 0.5,
+        rotation_prob: float = 0.5,
+        rotation_degrees: float = 180.0,
     ) -> None:
         self.crop_size = crop_size
         self.class_aware = class_aware
@@ -43,13 +48,31 @@ class TrainTransform:
         self.cat_max_ratio = cat_max_ratio
         self.scale = scale
         self.ratio_range = ratio_range
+        if crop_size <= 0 or scale <= 0 or not 0 < ratio_range[0] <= ratio_range[1]:
+            raise ValueError("crop, scale and resize ratios must be positive")
+        if any(not 0 <= p <= 1 for p in (rare_prob, horizontal_prob, vertical_prob, rotation_prob)):
+            raise ValueError("augmentation probabilities must lie in [0, 1]")
+        if not 0 < cat_max_ratio <= 1 or rotation_degrees < 0:
+            raise ValueError("invalid crop ratio or rotation angle")
+        self.horizontal_prob = horizontal_prob
+        self.vertical_prob = vertical_prob
+        self.rotation_prob = rotation_prob
+        self.rotation_degrees = rotation_degrees
 
     def __call__(self, image: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         image, mask = self._random_resize(image, mask)
         image, mask = self._crop(image, mask)
-        if np.random.rand() < 0.5:
+        if np.random.rand() < self.horizontal_prob:
             image = np.ascontiguousarray(image[:, ::-1])
             mask = np.ascontiguousarray(mask[:, ::-1])
+        if np.random.rand() < self.vertical_prob:
+            image = np.ascontiguousarray(image[::-1])
+            mask = np.ascontiguousarray(mask[::-1])
+        if np.random.rand() < self.rotation_prob:
+            angle = float(np.random.uniform(-self.rotation_degrees, self.rotation_degrees))
+            image = np.asarray(Image.fromarray(image).rotate(angle, resample=Image.Resampling.BILINEAR))
+            mask = np.asarray(Image.fromarray(mask.astype(np.uint8)).rotate(
+                angle, resample=Image.Resampling.NEAREST, fillcolor=255)).astype(np.int64)
         image = self._photometric(image)
         return image, mask
 
@@ -114,11 +137,11 @@ class TrainTransform:
             if name == "contrast":
                 out *= np.random.uniform(0.5, 1.5)
             elif name == "saturation":
-                gray = out.mean(axis=2, keepdims=True)
-                out = gray + (out - gray) * np.random.uniform(0.5, 1.5)
+                rgb = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8))
+                out = np.asarray(ImageEnhance.Color(rgb).enhance(float(np.random.uniform(0.5, 1.5))), dtype=np.float32)
             else:
-                # A small channel shift stands in for the HSV hue delta of +/-18.
-                shift = np.random.uniform(-18, 18) / 255.0 * 32.0
-                out[..., 0] += shift
-                out[..., 2] -= shift
+                hsv = np.array(Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).convert("HSV"))
+                delta = int(round(np.random.uniform(-18, 18) * 255 / 360))
+                hsv[..., 0] = ((hsv[..., 0].astype(np.int16) + delta) % 256).astype(np.uint8)
+                out = np.asarray(Image.fromarray(hsv, mode="HSV").convert("RGB"), dtype=np.float32)
         return np.clip(out, 0, 255).astype(np.uint8)
