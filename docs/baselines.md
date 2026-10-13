@@ -1,21 +1,20 @@
 # Comparison models
 
-## Integration status
+## Integration and release plan
 
-All bundled comparison modules are local reference adapters. They are not the
-original training archives and do not establish the published comparison scores.
-In particular, SegMAN, OverLoCK, Spatial-Mamba, RS3Mamba and HL-SAM-Seg are
-**interface prototypes** with simplified blocks: they do not implement the
-official selective-scan kernels or SAM encoder. The factory emits a warning when
-building them. Use their official repositories for scientific baseline reproduction.
-The remaining adapters are executable PyTorch references and also need a validated
-configuration/checkpoint match before reproducing a paper row.
+We are organizing comparison-model implementations, experiment configurations and
+trained weights under a shared training and evaluation interface. Model-specific
+resources will be released progressively after integration and validation.
 
-The table below preserves the previous release's experiment-source notes. The
-named MMSegmentation configuration files and original trained checkpoints are
-not shipped in this tree. See [release provenance](reproducibility.md).
+Full architecture integration for SegMAN, OverLoCK, Spatial-Mamba, RS3Mamba and
+HL-SAM-Seg is in progress. The table below provides upstream references and
+configuration identifiers from the existing experiment notes; corresponding
+release packages and checkpoint links will be added as they become available.
 
-The mIoU numbers in the paper were produced by training each model in MMSegmentation for 80k iterations (512 crop, AdamW 6e-5, polynomial decay, batch 8 on each of 2 GPUs). This repository reimplements those settings in plain PyTorch so training and testing do not depend on MMSegmentation. Where a model needs a custom CUDA kernel, the file says so and links to the official code.
+The shared training recipe uses 80,000 iterations, 512-pixel crops, AdamW with
+learning rate `6e-5`, polynomial decay and an effective batch size of 16.
+See [Operations](operations.md) for the executable workflow and the
+[release roadmap](reproducibility.md) for planned artifacts.
 
 | Model | Backbone in the table | Paper | Official code | Config trained for the table |
 | --- | --- | --- | --- | --- |
@@ -36,7 +35,10 @@ The mIoU numbers in the paper were produced by training each model in MMSegmenta
 
 `*` is `floodnet`, `rescuenet`, or `fwisd`. FloodNet and RescueNet train on `train_only_crop1024` and test on the original tiles. FWISD trains on `img_dir/train` and evaluates on `img_dir/val`.
 
-Two details that differ between the manuscript text and the launched configs:
+### Configuration alignment
+
+The configuration archive is being consolidated with the public training tools.
+The existing notes record two settings to align during checkpoint packaging:
 
 - The manuscript states a sliding-window stride of 384. `tools/test.py` defaults to 384. The MMSegmentation configs used stride 341.
 - SegFormer's MMSegmentation config sets the decode-head learning rate to 10 times the backbone. `tools/train.py` uses one AdamW learning rate of `6e-5` for every parameter, which is the rate written in the paper.

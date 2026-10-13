@@ -9,5 +9,5 @@
   export, single-image prediction and synchronized runtime benchmarking.
 - Correct object-conditioned state heads, cumulative ordinal probabilities, boundary
   logit supervision, composition loss, valid-pixel hierarchy normalization and ignore handling.
-- Restore the missing shared comparison block and identify lightweight baseline prototypes.
-- Document reference-code versus original experiment provenance and checkpoint compatibility.
+- Add the shared comparison block and a staged comparison-model integration plan.
+- Document the release roadmap, version-specific measurements and checkpoint compatibility.

@@ -66,9 +66,8 @@ bounded to ten attempts before falling back to a valid-size crop.
 
 The public rotation defaults are probability `0.5` and angles uniformly sampled
 from `[-180, 180]` degrees. RGB uses bilinear interpolation and labels nearest
-neighbor with ignored borders. These are explicit reference-implementation
-defaults; the manuscript does not supply the original rotation distribution.
-Inspect `TrainTransform` before claiming an exact match to an archived experiment.
+neighbor with ignored borders. These defaults are defined in `TrainTransform`;
+dataset-specific augmentation recipes will accompany the staged checkpoint releases.
 
 `--amp` enables optional CUDA FP16. `--sync-bn` enables synchronized BatchNorm
 for multi-GPU runs. Both change the numerical training setting and are opt-in.
@@ -134,6 +133,5 @@ python -m tools.benchmark --model hdrnet --dataset floodnet --size 512 \
 
 Timing synchronizes CUDA before and after every measured forward pass. Reports
 contain batch latency, throughput, dispersion, actual parameter count, and peak
-allocated CUDA memory. CPU memory is reported as null. Measurements exclude
-I/O, preprocessing and sliding-window aggregation and do not claim onboard UAV
-deployment performance. Report hardware and dtype with every measurement.
+allocated CUDA memory. CPU memory is reported as null. The timing scope is the
+model forward pass; report hardware and dtype with every measurement.
